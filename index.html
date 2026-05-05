@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="PT評估">
+<meta name="theme-color" content="#2d6a4f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>物理治療評估</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+  :root {
+    --bg:#f5f3ef;--surface:#fff;--border:#e0dbd2;--text:#1a1a1a;--text-muted:#888;
+    --accent:#2d6a4f;--passive:#5c4a8a;
+    --tag-pain:#c0392b;--tag-pain-bg:#fdf0ef;
+    --tag-limit:#d4820a;--tag-limit-bg:#fef9ec;
+    --tag-comp:#1a6fa8;--tag-comp-bg:#edf4fc;
+    --tag-norm:#2d6a4f;--tag-norm-bg:#e8f5ee;
+    --pos:#2d6a4f;--pos-bg:#e8f5ee;--neg:#c0392b;--neg-bg:#fdf0ef;
+    --shadow:0 2px 12px rgba(0,0,0,0.07);--radius:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:24px 16px 60px;}
+  header{max-width:720px;margin:0 auto 24px;display:flex;align-items:baseline;gap:12px;}
+  header h1{font-size:22px;font-weight:700;letter-spacing:.03em;color:var(--accent);}
+  header span{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);}
+  .container{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:16px;}
+  .section-label{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--text-muted);text-transform:uppercase;margin-bottom:8px;padding-left:2px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field-group{display:flex;flex-direction:column;gap:5px;}
+  .field-group label{font-size:12px;color:var(--text-muted);font-weight:500;}
+  .field-input{border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color .15s;width:100%;}
+  .field-input:focus{border-color:var(--accent);background:#fff;}
+  .gender-row{display:flex;gap:8px;}
+  .gender-btn{flex:1;padding:8px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text-muted);cursor:pointer;transition:all .15s;font-weight:500;}
+  .gender-btn.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .big-textarea{width:100%;border:1px solid var(--border);border-radius:7px;padding:10px 12px;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none;transition:border-color .15s;line-height:1.7;min-height:80px;}
+  .big-textarea:focus{border-color:var(--accent);background:#fff;}
+  .big-textarea::placeholder{color:#bbb;}
+
+  /* assess shell */
+  .assess-shell{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .assess-select-row{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--surface);}
+  .assess-select{flex:1;border:1px solid var(--border);border-radius:7px;padding:8px 32px 8px 12px;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;}
+  .assess-add-btn{padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;transition:background .15s;flex-shrink:0;}
+  .assess-add-btn:hover{background:#235c40;}
+  .sub-card{border-top:1px solid var(--border);background:var(--surface);overflow:hidden;}
+  .sub-header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;cursor:pointer;user-select:none;transition:background .15s;}
+  .sub-header:hover{background:#fafaf8;}
+  .sub-title{font-size:14px;font-weight:600;}
+  .sub-header-right{display:flex;align-items:center;gap:10px;}
+  .remove-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;transition:color .15s;}
+  .remove-btn:hover{color:var(--tag-pain);}
+  .chevron{font-size:12px;color:var(--text-muted);transition:transform .22s;}
+  .sub-card.open .chevron{transform:rotate(180deg);}
+  .sub-body{display:none;border-top:1px solid var(--border);background:#fafaf8;padding:14px 18px;animation:fadeIn .18s ease;}
+  .sub-card.open .sub-body{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  .assess-empty{padding:20px 18px;color:var(--text-muted);font-size:13px;text-align:center;}
+
+  /* ROM */
+  .rom-select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .rom-select{flex:1;border:1px solid var(--border);border-radius:7px;padding:7px 32px 7px 10px;font-size:13px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--surface);outline:none;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;}
+  .rom-region-add-btn{padding:7px 13px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;transition:background .15s;}
+  .rom-region-add-btn:hover{background:#235c40;}
+  .rom-regions{display:flex;flex-direction:column;gap:10px;}
+  .region-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .region-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;user-select:none;transition:background .15s;}
+  .region-header:hover{background:#fafaf8;}
+  .region-header-right{display:flex;align-items:center;gap:8px;}
+  .region-name{font-size:13px;font-weight:600;}
+  .region-remove-btn{background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;line-height:1;padding:2px 3px;transition:color .15s;}
+  .region-remove-btn:hover{color:var(--tag-pain);}
+  .region-chevron{font-size:11px;color:var(--text-muted);transition:transform .2s;}
+  .region-card.open .region-chevron{transform:rotate(180deg);}
+  .region-body{display:none;padding:10px 14px 12px;border-top:1px solid var(--border);background:var(--bg);}
+  .region-card.open .region-body{display:block;}
+  .mode-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px;}
+  .mode-btn{padding:5px 14px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-muted);transition:background .15s,color .15s;font-family:'Noto Sans TC',sans-serif;}
+  .mode-btn.active-mode{background:var(--accent);color:#fff;}
+  .mode-btn.passive-mode{background:var(--passive);color:#fff;}
+  .motion-list{display:flex;flex-direction:column;gap:8px;}
+  .motion-row{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 11px;}
+  .motion-label{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;margin-bottom:7px;}
+  .tag-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:7px;}
+  .tag-btn{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;font-family:'Noto Sans TC',sans-serif;}
+  .tag-btn.norm {color:var(--tag-norm);background:var(--tag-norm-bg);border-color:#a8d8b8;}
+  .tag-btn.pain {color:var(--tag-pain);background:var(--tag-pain-bg);border-color:#f0b0aa;}
+  .tag-btn.limit{color:var(--tag-limit);background:var(--tag-limit-bg);border-color:#f0d090;}
+  .tag-btn.comp {color:var(--tag-comp);background:var(--tag-comp-bg);border-color:#90c0e0;}
+  .tag-btn.norm.selected {background:var(--tag-norm);color:#fff;border-color:var(--tag-norm);}
+  .tag-btn.pain.selected {background:var(--tag-pain);color:#fff;border-color:var(--tag-pain);}
+  .tag-btn.limit.selected{background:var(--tag-limit);color:#fff;border-color:var(--tag-limit);}
+  .tag-btn.comp.selected {background:var(--tag-comp);color:#fff;border-color:var(--tag-comp);}
+  .note-input{width:100%;border:1px solid var(--border);border-radius:5px;padding:5px 9px;font-size:12px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);resize:none;outline:none;transition:border-color .15s;line-height:1.5;}
+  .note-input:focus{border-color:var(--accent);background:#fff;}
+  .note-input::placeholder{color:#bbb;}
+
+  /* MMT */
+  .mmt-add-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .mmt-name-input{flex:1;min-width:100px;border:none;outline:none;background:transparent;font-size:13px;font-family:'Noto Sans TC',sans-serif;color:var(--text);padding:4px 0;}
+  .mmt-name-input::placeholder{color:#bbb;}
+  .mmt-grade-row{display:flex;gap:4px;flex-shrink:0;}
+  .grade-btn{width:30px;height:30px;border-radius:50%;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--bg);color:var(--text-muted);transition:all .15s;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:center;}
+  .grade-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .grade-btn.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .inline-note{border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-size:12px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);outline:none;transition:border-color .15s;width:120px;}
+  .inline-note:focus{border-color:var(--accent);background:#fff;}
+  .inline-note::placeholder{color:#bbb;}
+  .inline-add-btn{padding:5px 13px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;transition:background .15s;flex-shrink:0;}
+  .inline-add-btn:hover{background:#235c40;}
+  .mmt-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;animation:fadeIn .15s ease;}
+  .mmt-item-name{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;flex:1;min-width:80px;color:var(--text);}
+  .mmt-item-grade{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--accent);background:var(--pos-bg);border-radius:6px;padding:2px 10px;flex-shrink:0;}
+  .mmt-item-grade.none{color:var(--text-muted);background:var(--bg);}
+  .mmt-item-note{font-size:12px;color:var(--text-muted);flex:1;}
+  .item-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:15px;line-height:1;padding:2px 3px;transition:color .15s;flex-shrink:0;}
+  .item-del:hover{color:var(--tag-pain);}
+
+  /* Special Test */
+  .st-add-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .st-name-input{flex:1;min-width:100px;border:none;outline:none;background:transparent;font-size:13px;font-family:'Noto Sans TC',sans-serif;color:var(--text);padding:4px 0;}
+  .st-name-input::placeholder{color:#bbb;}
+  .st-result-row{display:flex;gap:5px;flex-shrink:0;}
+  .result-btn{padding:4px 13px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;font-family:'DM Mono',monospace;}
+  .result-btn.pos{color:var(--pos);background:var(--pos-bg);border-color:#a8d8b8;}
+  .result-btn.neg{color:var(--neg);background:var(--neg-bg);border-color:#f0b0aa;}
+  .result-btn.pos.selected{background:var(--pos);color:#fff;border-color:var(--pos);}
+  .result-btn.neg.selected{background:var(--neg);color:#fff;border-color:var(--neg);}
+  .st-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;animation:fadeIn .15s ease;}
+  .st-item-name{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;flex:1;min-width:80px;color:var(--text);}
+  .st-item-result{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;padding:2px 10px;border-radius:6px;flex-shrink:0;}
+  .st-item-result.pos{color:var(--pos);background:var(--pos-bg);}
+  .st-item-result.neg{color:var(--neg);background:var(--neg-bg);}
+  .st-item-result.none{color:var(--text-muted);background:var(--bg);}
+  .st-item-note{font-size:12px;color:var(--text-muted);flex:1;}
+
+  /* Palpation / Joint Play shared row */
+  .palpation-add-row,.jp-add-row{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .palpation-name-input,.jp-name-input{flex:1;min-width:100px;border:none;outline:none;background:transparent;font-size:13px;font-family:'Noto Sans TC',sans-serif;color:var(--text);padding:4px 0;}
+  .palpation-name-input::placeholder,.jp-name-input::placeholder{color:#bbb;}
+  .pal-tag-row,.jp-tag-row{display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0;}
+  .pal-tag,.jp-tag{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .15s;font-family:'Noto Sans TC',sans-serif;}
+  .pal-tag.norm {color:var(--tag-norm);background:var(--tag-norm-bg);border-color:#a8d8b8;}
+  .pal-tag.tight{color:var(--tag-limit);background:var(--tag-limit-bg);border-color:#f0d090;}
+  .pal-tag.tend {color:var(--tag-pain);background:var(--tag-pain-bg);border-color:#f0b0aa;}
+  .pal-tag.sens {color:var(--tag-comp);background:var(--tag-comp-bg);border-color:#90c0e0;}
+  .pal-tag.norm.sel {background:var(--tag-norm);color:#fff;}
+  .pal-tag.tight.sel{background:var(--tag-limit);color:#fff;}
+  .pal-tag.tend.sel {background:var(--tag-pain);color:#fff;}
+  .pal-tag.sens.sel {background:var(--tag-comp);color:#fff;}
+  .jp-tag.firm{color:#6a4e2d;background:#fef3e8;border-color:#e8c890;}
+  .jp-tag.hard{color:#4a4a8a;background:#f0eefa;border-color:#c0b0e8;}
+  .jp-tag.soft{color:#2d6a4f;background:#e8f5ee;border-color:#a8d8b8;}
+  .jp-tag.empty{color:#888;background:#f0f0f0;border-color:#ccc;}
+  .jp-tag.pain{color:var(--tag-pain);background:var(--tag-pain-bg);border-color:#f0b0aa;}
+  .jp-tag.firm.sel{background:#6a4e2d;color:#fff;}
+  .jp-tag.hard.sel{background:#4a4a8a;color:#fff;}
+  .jp-tag.soft.sel{background:#2d6a4f;color:#fff;}
+  .jp-tag.empty.sel{background:#888;color:#fff;}
+  .jp-tag.pain.sel{background:var(--tag-pain);color:#fff;}
+  .gen-item{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;animation:fadeIn .15s ease;}
+  .gen-item-name{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;flex:1;min-width:80px;color:var(--text);}
+  .gen-item-tags{display:flex;gap:4px;flex-wrap:wrap;}
+  .gen-item-tag{padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .gen-item-note{font-size:12px;color:var(--text-muted);flex:1;min-width:60px;}
+
+  /* Posture canvas */
+  .posture-wrap{display:flex;flex-direction:column;gap:12px;}
+  .posture-canvas-box{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;touch-action:none;}
+  canvas{display:block;}
+  .posture-note{width:100%;border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:13px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);resize:vertical;outline:none;transition:border-color .15s;line-height:1.7;min-height:70px;}
+  .posture-note:focus{border-color:var(--accent);background:#fff;}
+  .posture-note::placeholder{color:#bbb;}
+  .posture-reset-btn{padding:6px 14px;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);border-radius:7px;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:background .15s;align-self:flex-start;}
+  .posture-reset-btn:hover{background:#ece9e4;}
+
+  /* Motion assessment */
+  .motion-assess-item{display:flex;align-items:flex-start;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);animation:fadeIn .15s ease;}
+  .motion-assess-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);padding-top:9px;min-width:20px;text-align:right;flex-shrink:0;}
+  .motion-assess-input{flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--text);line-height:1.6;resize:none;padding:7px 0;min-height:36px;}
+  .motion-assess-input::placeholder{color:#bbb;}
+
+  /* Breathing */
+  .breath-section{display:flex;flex-direction:column;gap:10px;}
+  .breath-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+  .breath-label{font-size:12px;font-weight:700;color:var(--text-muted);letter-spacing:.06em;margin-bottom:8px;text-transform:uppercase;}
+  .breath-input{width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:'Noto Sans TC',sans-serif;color:var(--text);background:var(--bg);resize:none;outline:none;transition:border-color .15s;line-height:1.6;min-height:60px;}
+  .breath-input:focus{border-color:var(--accent);background:#fff;}
+  .breath-input::placeholder{color:#bbb;}
+
+  /* simple list */
+  .list-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+  .simple-item{display:flex;align-items:flex-start;gap:10px;padding:11px 16px;border-bottom:1px solid var(--border);animation:fadeIn .15s ease;}
+  .item-number{font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);padding-top:9px;min-width:20px;text-align:right;flex-shrink:0;}
+  .item-input{flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--text);line-height:1.6;resize:none;padding:7px 0;min-height:36px;}
+  .item-input::placeholder{color:#bbb;}
+  .item-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:16px;padding:7px 2px;line-height:1;transition:color .15s;flex-shrink:0;}
+  .item-del:hover{color:var(--tag-pain);}
+  .list-add-row{display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--border);}
+  .list-add-input{flex:1;border:none;outline:none;background:transparent;font-size:14px;font-family:'Noto Sans TC',sans-serif;color:var(--text);padding:6px 0;}
+  .list-add-input::placeholder{color:#bbb;}
+  .list-add-btn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;transition:background .15s;}
+  .list-add-btn:hover{background:#235c40;}
+
+  .bottom-bar{max-width:720px;margin:24px auto 0;display:flex;gap:10px;}
+  .btn-primary{flex:1;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;letter-spacing:.04em;transition:background .15s;}
+  .btn-primary:hover{background:#235c40;}
+  .btn-secondary{padding:13px 20px;background:var(--surface);color:var(--text-muted);border:1px solid var(--border);border-radius:var(--radius);font-size:14px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:background .15s;}
+  .btn-secondary:hover{background:#f0ede8;}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:12px;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--surface);border-radius:14px;width:calc(100% - 0px);max-width:640px;max-height:82vh;overflow-y:auto;padding:18px 16px;box-shadow:0 12px 48px rgba(0,0,0,.2);}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .modal-header h2{font-size:17px;font-weight:700;color:var(--accent);}
+  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-muted);}
+  .report-body{font-size:13px;line-height:1.85;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--border);}
+  .report-body div{border:none!important;outline:none!important;box-shadow:none!important;}
+  .modal-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;}
+  .records-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:16px;}
+  .records-overlay.show{display:flex;}
+  .records-modal{background:var(--surface);border-radius:14px;width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.2);}
+  .records-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .records-header h2{font-size:17px;font-weight:700;color:var(--accent);}
+  .records-list{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;}
+  .record-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:background .15s;}
+  .record-item:hover{background:#ece9e4;}
+  .record-item-name{font-size:14px;font-weight:600;color:var(--text);}
+  .record-item-date{font-size:11px;color:var(--text-muted);font-family:'DM Mono',monospace;margin-top:3px;}
+  .record-item-actions{display:flex;gap:6px;margin-top:8px;}
+  .record-btn{padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'Noto Sans TC',sans-serif;transition:background .15s;}
+  .record-btn.view{background:var(--accent);color:#fff;}
+  .record-btn.view:hover{background:#235c40;}
+  .record-btn.del{background:#fdf0ef;color:var(--tag-pain);border:1px solid #f0b0aa;}
+  .record-btn.del:hover{background:var(--tag-pain);color:#fff;}
+  .records-empty{padding:40px;text-align:center;color:var(--text-muted);font-size:14px;}
+  .record-view-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:16px;}
+  .record-view-overlay.show{display:flex;}
+  .record-view-modal{background:var(--surface);border-radius:14px;width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 48px rgba(0,0,0,.2);}
+  .record-view-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .record-view-body{flex:1;overflow-y:auto;padding:16px 24px;}
+  .record-view-content{font-size:13px;line-height:1.85;white-space:pre-wrap;font-family:'DM Mono',monospace;color:var(--text);background:var(--bg);border-radius:8px;padding:16px;border:1px solid var(--border);}
+  .record-view-actions{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;flex-shrink:0;}
+  @media print{body>*:not(#print-area){display:none!important;}.print-content{white-space:pre-wrap;font-family:monospace;font-size:12px;line-height:1.8;padding:20px;}}
+  .btn-notion-save{flex:1;padding:10px 14px;background:#000;color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:background .15s;}
+  .btn-notion-save:hover{background:#333;}
+  .notion-settings-link{font-size:12px;color:var(--accent);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<header><h1>物理治療評估</h1><span>PT Assessment</span><button style="font-size:12px;color:var(--accent);cursor:pointer;text-decoration:underline;background:none;border:none;padding:0;margin-left:auto;white-space:nowrap;" onclick="document.getElementById('notion-modal').classList.add('show');loadNotionSettings()">⚙️ Notion</button></header>
+<div class="container">
+
+  <!-- 基本資料 -->
+  <div>
+    <div class="section-label">病人基本資料</div>
+    <div class="card">
+      <div class="info-grid">
+        <div class="field-group"><label>姓名</label><input class="field-input" id="pt-name" type="text" placeholder="請輸入姓名"></div>
+        <div class="field-group"><label>年齡</label><input class="field-input" id="pt-age" type="number" placeholder="歲" min="0" max="120"></div>
+        <div class="field-group"><label>性別</label>
+          <div class="gender-row">
+            <button class="gender-btn" id="gender-m" onclick="selectGender('男')">男</button>
+            <button class="gender-btn" id="gender-f" onclick="selectGender('女')">女</button>
+          </div>
+        </div>
+        <div class="field-group"><label>職業</label><input class="field-input" id="pt-job" type="text" placeholder="請輸入職業"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 注意事項 -->
+  <div>
+    <div class="section-label">注意事項 Notes</div>
+    <div class="card"><textarea class="big-textarea" id="pt-notes" placeholder="過敏史、禁忌症、特殊注意事項..."></textarea></div>
+  </div>
+
+  <!-- 主訴 -->
+  <div>
+    <div class="section-label">主訴 Chief Complaint</div>
+    <div class="card"><textarea class="big-textarea" id="chief-complaint" placeholder="描述病人主要不適或問題..."></textarea></div>
+  </div>
+
+  <!-- 過去病史 -->
+  <div>
+    <div class="section-label">過去病史 Medical History</div>
+    <div class="card"><textarea class="big-textarea" id="med-history" placeholder="過去手術、受傷、疾病、用藥等相關病史..."></textarea></div>
+  </div>
+
+  <!-- 理學評估 -->
+  <div>
+    <div class="section-label">理學評估 Physical Examination</div>
+    <div class="assess-shell">
+      <div class="assess-select-row">
+        <select class="assess-select" id="assess-selector">
+          <option value="">選擇評估項目...</option>
+          <option value="rom">關節活動度 ROM</option>
+          <option value="mmt">肌力測試 MMT</option>
+          <option value="st">Special Test</option>
+          <option value="palpation">觸診 Palpation</option>
+          <option value="jp">Joint Play</option>
+          <option value="posture">靜態姿勢評估</option>
+          <option value="motion">動作評估</option>
+          <option value="breath">呼吸評估</option>
+          <option value="other">其他 Other</option>
+        </select>
+        <button class="assess-add-btn" onclick="addAssess()">＋ 新增</button>
+      </div>
+      <div id="assess-list"><div class="assess-empty" id="assess-empty">尚未新增評估項目，請從上方選單選擇</div></div>
+    </div>
+  </div>
+
+  <!-- 治療 -->
+  <div>
+    <div class="section-label">治療 Treatment</div>
+    <div class="list-card">
+      <div id="treatment-items"></div>
+      <div class="list-add-row">
+        <span style="font-size:13px;color:var(--text-muted);">＋</span>
+        <input class="list-add-input" id="treatment-input" placeholder="新增治療項目..." onkeydown="if(event.key==='Enter'){event.preventDefault();addSimple('treatment');}">
+        <button class="list-add-btn" onclick="addSimple('treatment')">新增</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 回家運動 -->
+  <div>
+    <div class="section-label">回家運動 Home Exercise</div>
+    <div class="list-card">
+      <div id="exercise-items"></div>
+      <div class="list-add-row">
+        <span style="font-size:13px;color:var(--text-muted);">＋</span>
+        <input class="list-add-input" id="exercise-input" placeholder="新增回家運動..." onkeydown="if(event.key==='Enter'){event.preventDefault();addSimple('exercise');}">
+        <button class="list-add-btn" onclick="addSimple('exercise')">新增</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="btn-secondary" onclick="resetAll()">清除全部</button>
+  <button class="btn-secondary" onclick="openRecords()" style="background:var(--surface);">📋 紀錄</button>
+  <button class="btn-primary" onclick="generateReport()">產生報告</button>
+</div>
+
+<!-- 報告彈窗 -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header"><h2>評估報告</h2><button class="modal-close" onclick="document.getElementById('modal').classList.remove('show');resetNotionBtn()">✕</button></div>
+    <div class="report-body" id="reportContent"></div>
+    <div id="notion-status" style="font-size:12px;margin-bottom:4px;display:none;"></div>
+    <div class="modal-actions" style="flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:8px;width:100%;">
+        <button class="btn-primary" onclick="copyReport()" style="flex:1;">複製報告</button>
+        <button class="btn-secondary" onclick="saveRecord()" style="flex:1;background:#e8f5ee;color:#2d6a4f;border-color:#a8d8b8;">💾 儲存</button>
+      </div>
+      <div style="display:flex;gap:8px;width:100%;">
+        <button class="btn-notion-save" id="notion-save-btn" onclick="saveToNotion()" style="flex:1;">存入 Notion</button>
+        <button class="btn-secondary" onclick="document.getElementById('modal').classList.remove('show');resetNotionBtn()" style="flex:1;">關閉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notion 設定彈窗 -->
+<div class="modal-overlay" id="notion-modal" onclick="closeNotionModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚙️ Notion 設定</h2>
+      <button class="modal-close" onclick="document.getElementById('notion-modal').classList.remove('show')">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">請輸入你的 Notion Integration Token 和資料庫 ID，設定會儲存在此裝置上。</p>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div class="field-group"><label>Integration Token</label><input class="field-input" id="notion-token-input" type="password" placeholder="secret_xxxxxxxxxxxx"></div>
+      <div class="field-group"><label>資料庫 ID</label><input class="field-input" id="notion-db-input" type="text" placeholder="357091fccaf480b4a4b4d32484d033ea"></div>
+    </div>
+    <div id="notion-test-msg" style="margin-top:12px;font-size:13px;min-height:20px;color:var(--accent);"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveNotionSettings()">儲存設定</button>
+      <button class="btn-secondary" onclick="testNotionConnection()">測試連線</button>
+    </div>
+  </div>
+</div>
+
+<!-- 紀錄列表彈窗 -->
+<div class="records-overlay" id="records-overlay" onclick="closeRecordsIfBg(event)">
+  <div class="records-modal">
+    <div class="records-header">
+      <h2>📋 評估紀錄</h2>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button style="padding:5px 10px;background:#e8f5ee;color:#2d6a4f;border:1px solid #a8d8b8;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;" onclick="exportRecords()">匯出</button>
+        <button style="padding:5px 10px;background:var(--bg);color:var(--text-muted);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Noto Sans TC',sans-serif;" onclick="importRecords()">匯入</button>
+        <button class="modal-close" onclick="document.getElementById('records-overlay').classList.remove('show')">✕</button>
+      </div>
+    </div>
+    <div class="records-list" id="records-list"></div>
+  </div>
+</div>
+
+<!-- 單筆紀錄檢視彈窗 -->
+<div class="record-view-overlay" id="record-view-overlay" onclick="closeRecordViewIfBg(event)">
+  <div class="record-view-modal">
+    <div class="record-view-header">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--accent);" id="record-view-title"></div>
+        <div style="font-size:11px;color:var(--text-muted);font-family:DM Mono,monospace;margin-top:2px;" id="record-view-date"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('record-view-overlay').classList.remove('show')">✕</button>
+    </div>
+    <div class="record-view-body">
+      <div class="record-view-content" id="record-view-content"></div>
+    </div>
+    <div class="record-view-actions">
+      <button class="btn-primary" onclick="copyRecordContent()">複製</button>
+      <button class="btn-secondary" onclick="printRecord()">列印 / PDF</button>
+      <button class="btn-secondary" onclick="document.getElementById('record-view-overlay').classList.remove('show')">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="print-area" style="display:none;"></div>
+
+<script>
+// ══ 性別 ══
+let selectedGender='';
+function selectGender(g){selectedGender=g;document.getElementById('gender-m').classList.toggle('selected',g==='男');document.getElementById('gender-f').classList.toggle('selected',g==='女');}
+
+// ══ 簡單條列 ══
+const simpleData={treatment:[],exercise:[]};
+function addSimple(t){const i=document.getElementById(t+'-input');const v=i.value.trim();if(!v)return;simpleData[t].push(v);i.value='';renderSimple(t);i.focus();}
+function deleteSimple(t,i){simpleData[t].splice(i,1);renderSimple(t);}
+function updateSimple(t,i,v){simpleData[t][i]=v;}
+function renderSimple(t){const c=document.getElementById(t+'-items');c.innerHTML='';simpleData[t].forEach((tx,i)=>{const r=document.createElement('div');r.className='simple-item';r.innerHTML=`<div class="item-number">${i+1}.</div><textarea class="item-input" rows="1" oninput="updateSimple('${t}',${i},this.value);autoResize(this)">${tx}</textarea><button class="item-del" onclick="deleteSimple('${t}',${i})">✕</button>`;c.appendChild(r);setTimeout(()=>autoResize(r.querySelector('textarea')),0);});}
+function autoResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+
+// ══ 評估大項 ══
+const ASSESS_TYPES={rom:'關節活動度 ROM',mmt:'肌力測試 MMT',st:'Special Test',palpation:'觸診 Palpation',jp:'Joint Play',posture:'靜態姿勢評估',motion:'動作評估',breath:'呼吸評估',other:'其他 Other'};
+let addedAssess=[];
+function addAssess(){const sel=document.getElementById('assess-selector');const type=sel.value;if(!type)return;if(addedAssess.includes(type)){document.getElementById('sub-'+type)?.classList.add('open');sel.value='';return;}addedAssess.push(type);renderAssessList();sel.value='';setTimeout(()=>{const c=document.getElementById('sub-'+type);if(c){c.classList.add('open');c.scrollIntoView({behavior:'smooth',block:'nearest'});}},60);}
+function removeAssess(type){addedAssess=addedAssess.filter(t=>t!==type);renderAssessList();}
+function toggleSub(type){document.getElementById('sub-'+type)?.classList.toggle('open');}
+function renderAssessList(){
+  const container=document.getElementById('assess-list');
+  container.innerHTML='';
+  if(addedAssess.length===0){const d=document.createElement('div');d.className='assess-empty';d.id='assess-empty';d.textContent='尚未新增評估項目，請從上方選單選擇';container.appendChild(d);return;}
+  addedAssess.forEach(type=>{
+    const card=document.createElement('div');card.className='sub-card';card.id='sub-'+type;
+    card.innerHTML=`<div class="sub-header" onclick="toggleSub('${type}')"><div class="sub-title">${ASSESS_TYPES[type]}</div><div class="sub-header-right"><button class="remove-btn" onclick="event.stopPropagation();removeAssess('${type}')">✕</button><span class="chevron">▼</span></div></div><div class="sub-body" id="sub-body-${type}"></div>`;
+    container.appendChild(card);
+    const body=document.getElementById('sub-body-'+type);
+    if(type==='rom')buildROMBody(body);
+    else if(type==='mmt')buildMMTBody(body);
+    else if(type==='st')buildSTBody(body);
+    else if(type==='palpation')buildPalpationBody(body);
+    else if(type==='jp')buildJPBody(body);
+    else if(type==='posture')buildPostureBody(body);
+    else if(type==='motion')buildMotionBody(body);
+    else if(type==='breath')buildBreathBody(body);
+    else if(type==='other')buildOtherBody(body);
+  });
+}
+
+// ══ ROM ══
+const ALL_REGIONS=[
+  {id:'cervical',name:'頸椎',motions:['Flex.','Ext.','Rot. R','Rot. L','SB. R','SB. L']},
+  {id:'thoracic_ue',name:'胸椎 (UE)',motions:['Flex.','Ext.','Rot. R','Rot. L','SB. R','SB. L']},
+  {id:'scapula',name:'肩胛骨',motions:['Protra.','Retra.','Eleva.','Depre.','Up R','Down R']},
+  {id:'shoulder',name:'肩 (GH)',motions:['Flex.','Ext.','90 ER','90 IR','Abd','Add','Hori. Abd','Hori. Add']},
+  {id:'thoracic_core',name:'胸椎 (核心)',motions:['Flex.','Ext.','Rot. R','Rot. L','SB. R','SB. L']},
+  {id:'lumbar',name:'腰椎',motions:['Flex.','Ext.','Rot. R','Rot. L','SB. R','SB. L']},
+  {id:'pelvis',name:'骨盆',motions:['Ant. tilt','Post. tilt','Rot. R','Rot. L','Hik. R','Hik. L']},
+  {id:'hip',name:'髖',motions:['Flex.','Ext.','ER','IR','Abd','Add']},
+  {id:'knee',name:'膝',motions:['Flex.','Ext.','ER','IR']},
+  {id:'ankle',name:'踝',motions:['DF','PF','Inver.','Ever.']},
+  {id:'elbow',name:'肘',motions:['Flex.','Ext.','Supi.','Pron.']},
+  {id:'wrist',name:'腕',motions:['Flex.','Ext.','Rad. D','Ulnar. D']},
+];
+let addedRegions=[];const romState={},modeState={};
+function initRegionState(id){const r=ALL_REGIONS.find(r=>r.id===id);modeState[id]='active';romState[id]={active:{},passive:{}};r.motions.forEach((_,i)=>{romState[id].active[i]={norm:false,pain:false,limit:false,comp:false,note:''};romState[id].passive[i]={norm:false,pain:false,limit:false,comp:false,note:''};});}
+function getMS(id,mode,i){return romState[id][mode][i];}
+function buildROMBody(body){body.innerHTML=`<div class="rom-select-row"><select class="rom-select" id="rom-selector"><option value="">選擇部位...</option>${ALL_REGIONS.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}</select><button class="rom-region-add-btn" onclick="addRegion()">＋ 新增部位</button></div><div class="rom-regions" id="rom-regions"><div style="color:var(--text-muted);font-size:12px;padding:4px 0 8px;">尚未新增部位</div></div>`;renderROMRegions();}
+function addRegion(){const sel=document.getElementById('rom-selector');const id=sel.value;if(!id)return;if(addedRegions.includes(id)){document.getElementById('rc-'+id)?.classList.add('open');sel.value='';return;}initRegionState(id);addedRegions.push(id);renderROMRegions();sel.value='';setTimeout(()=>document.getElementById('rc-'+id)?.classList.add('open'),50);}
+function renderROMRegions(){const c=document.getElementById('rom-regions');if(!c)return;c.innerHTML='';if(addedRegions.length===0){c.innerHTML='<div style="color:var(--text-muted);font-size:12px;padding:4px 0 8px;">尚未新增部位</div>';return;}addedRegions.forEach(id=>{const region=ALL_REGIONS.find(r=>r.id===id);const card=document.createElement('div');card.className='region-card';card.id='rc-'+id;card.innerHTML=`<div class="region-header" onclick="toggleRegionCard('${id}')"><div class="region-name">${region.name}</div><div class="region-header-right"><button class="region-remove-btn" onclick="event.stopPropagation();removeRegion('${id}')">✕</button><span class="region-chevron">▼</span></div></div><div class="region-body" id="rb-${id}"><div class="mode-toggle"><button class="mode-btn active-mode" id="mb-active-${id}" onclick="event.stopPropagation();setMode('${id}','active')">主動 AROM</button><button class="mode-btn" id="mb-passive-${id}" onclick="event.stopPropagation();setMode('${id}','passive')">被動 PROM</button></div><div class="motion-list" id="ml-${id}"></div></div>`;c.appendChild(card);renderMotions(id);});}
+function removeRegion(id){addedRegions=addedRegions.filter(r=>r!==id);renderROMRegions();}
+function toggleRegionCard(id){document.getElementById('rc-'+id)?.classList.toggle('open');}
+function setMode(id,mode){modeState[id]=mode;document.getElementById('mb-active-'+id).className='mode-btn'+(mode==='active'?' active-mode':'');document.getElementById('mb-passive-'+id).className='mode-btn'+(mode==='passive'?' passive-mode':'');renderMotions(id);}
+function renderMotions(id){const region=ALL_REGIONS.find(r=>r.id===id);const mode=modeState[id];const list=document.getElementById('ml-'+id);if(!list)return;list.innerHTML='';region.motions.forEach((motion,i)=>{const ms=getMS(id,mode,i);const row=document.createElement('div');row.className='motion-row';row.innerHTML=`<div class="motion-label">${motion}</div><div class="tag-row"><button class="tag-btn norm ${ms.norm?'selected':''}" onclick="toggleTag('${id}',${i},'norm')">正常</button><button class="tag-btn limit ${ms.limit?'selected':''}" onclick="toggleTag('${id}',${i},'limit')">受限</button><button class="tag-btn pain ${ms.pain?'selected':''}" onclick="toggleTag('${id}',${i},'pain')">疼痛</button><button class="tag-btn comp ${ms.comp?'selected':''}" onclick="toggleTag('${id}',${i},'comp')">代償</button></div><textarea class="note-input" rows="1" placeholder="備註..." oninput="saveNote('${id}',${i},this.value)">${ms.note}</textarea>`;list.appendChild(row);});}
+function toggleTag(id,i,tag){getMS(id,modeState[id],i)[tag]^=true;renderMotions(id);}
+function saveNote(id,i,value){getMS(id,modeState[id],i).note=value;}
+
+// ══ MMT ══
+const mmtData=[];let pendingMMT={grade:null};
+function buildMMTBody(body){pendingMMT={grade:null};body.innerHTML=`<div class="mmt-add-row"><input class="mmt-name-input" id="mmt-name-input" placeholder="肌肉 / 動作名稱..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitMMT();}"><div class="mmt-grade-row">${[0,1,2,3,4,5].map(g=>`<button class="grade-btn" id="pg-${g}" onclick="setPendingGrade(${g})">${g}</button>`).join('')}</div><input class="inline-note" id="mmt-pending-note" placeholder="備註..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitMMT();}"><button class="inline-add-btn" onclick="commitMMT()">新增</button></div><div id="mmt-list"></div>`;renderMMTList();}
+function setPendingGrade(g){pendingMMT.grade=pendingMMT.grade===g?null:g;[0,1,2,3,4,5].forEach(n=>document.getElementById('pg-'+n)?.classList.toggle('selected',pendingMMT.grade===n));}
+function commitMMT(){const ne=document.getElementById('mmt-name-input');const no=document.getElementById('mmt-pending-note');const name=ne?.value.trim();if(!name)return;mmtData.push({name,grade:pendingMMT.grade,note:no?.value.trim()||''});ne.value='';no.value='';pendingMMT={grade:null};[0,1,2,3,4,5].forEach(n=>document.getElementById('pg-'+n)?.classList.remove('selected'));renderMMTList();ne.focus();}
+function deleteMMT(i){mmtData.splice(i,1);renderMMTList();}
+function renderMMTList(){const c=document.getElementById('mmt-list');if(!c)return;c.innerHTML='';mmtData.forEach((item,i)=>{const row=document.createElement('div');row.className='mmt-item';row.innerHTML=`<div class="mmt-item-name">${item.name}</div><div class="mmt-item-grade ${item.grade!==null?'':'none'}">${item.grade!==null?item.grade+'/5':'—'}</div>${item.note?`<div class="mmt-item-note">${item.note}</div>`:''}<button class="item-del" onclick="deleteMMT(${i})">✕</button>`;c.appendChild(row);});}
+
+// ══ Special Test ══
+const stData=[];let pendingST={result:null};
+function buildSTBody(body){pendingST={result:null};body.innerHTML=`<div class="st-add-row"><input class="st-name-input" id="st-name-input" placeholder="Special Test 名稱..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitST();}"><div class="st-result-row"><button class="result-btn pos" id="pst-pos" onclick="setPendingResult('+')">＋</button><button class="result-btn neg" id="pst-neg" onclick="setPendingResult('-')">－</button></div><input class="inline-note" id="st-pending-note" placeholder="備註..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitST();}"><button class="inline-add-btn" onclick="commitST()">新增</button></div><div id="st-list"></div>`;renderSTList();}
+function setPendingResult(r){pendingST.result=pendingST.result===r?null:r;document.getElementById('pst-pos')?.classList.toggle('selected',pendingST.result==='+');document.getElementById('pst-neg')?.classList.toggle('selected',pendingST.result==='-');}
+function commitST(){const ne=document.getElementById('st-name-input');const no=document.getElementById('st-pending-note');const name=ne?.value.trim();if(!name)return;stData.push({name,result:pendingST.result,note:no?.value.trim()||''});ne.value='';no.value='';pendingST={result:null};document.getElementById('pst-pos')?.classList.remove('selected');document.getElementById('pst-neg')?.classList.remove('selected');renderSTList();ne.focus();}
+function deleteST(i){stData.splice(i,1);renderSTList();}
+function renderSTList(){const c=document.getElementById('st-list');if(!c)return;c.innerHTML='';stData.forEach((item,i)=>{const row=document.createElement('div');row.className='st-item';const rc=item.result==='+'?'pos':item.result==='-'?'neg':'none';row.innerHTML=`<div class="st-item-name">${item.name}</div><div class="st-item-result ${rc}">${item.result??'—'}</div>${item.note?`<div class="st-item-note">${item.note}</div>`:''}<button class="item-del" onclick="deleteST(${i})">✕</button>`;c.appendChild(row);});}
+
+// ══ Palpation ══
+const palData=[];let pendingPal={tags:new Set()};
+const PAL_TAGS=[{k:'norm',l:'正常'},{k:'tight',l:'緊繃'},{k:'tend',l:'壓痛'},{k:'sens',l:'敏感'}];
+function buildPalpationBody(body){pendingPal={tags:new Set()};body.innerHTML=`<div class="palpation-add-row"><input class="palpation-name-input" id="pal-name-input" placeholder="部位 / 肌肉名稱..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitPal();}"><div class="pal-tag-row">${PAL_TAGS.map(t=>`<button class="pal-tag ${t.k}" id="ppal-${t.k}" onclick="togglePalPending('${t.k}')">${t.l}</button>`).join('')}</div><input class="inline-note" id="pal-pending-note" placeholder="備註..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitPal();}"><button class="inline-add-btn" onclick="commitPal()">新增</button></div><div id="pal-list"></div>`;renderPalList();}
+function togglePalPending(k){if(pendingPal.tags.has(k))pendingPal.tags.delete(k);else pendingPal.tags.add(k);document.getElementById('ppal-'+k)?.classList.toggle('sel',pendingPal.tags.has(k));}
+function commitPal(){const ne=document.getElementById('pal-name-input');const no=document.getElementById('pal-pending-note');const name=ne?.value.trim();if(!name)return;palData.push({name,tags:[...pendingPal.tags],note:no?.value.trim()||''});ne.value='';no.value='';pendingPal={tags:new Set()};PAL_TAGS.forEach(t=>document.getElementById('ppal-'+t.k)?.classList.remove('sel'));renderPalList();ne.focus();}
+function deletePal(i){palData.splice(i,1);renderPalList();}
+function renderPalList(){const c=document.getElementById('pal-list');if(!c)return;c.innerHTML='';
+  const tagColors={'norm':'background:#e8f5ee;color:#2d6a4f;','tight':'background:#fef9ec;color:#d4820a;','tend':'background:#fdf0ef;color:#c0392b;','sens':'background:#edf4fc;color:#1a6fa8;'};
+  const tagLabels={'norm':'正常','tight':'緊繃','tend':'壓痛','sens':'敏感'};
+  palData.forEach((item,i)=>{const row=document.createElement('div');row.className='gen-item';const tagsHtml=item.tags.map(t=>`<span class="gen-item-tag" style="${tagColors[t]}">${tagLabels[t]}</span>`).join('');row.innerHTML=`<div class="gen-item-name">${item.name}</div><div class="gen-item-tags">${tagsHtml||'<span style="color:#bbb;font-size:11px;">—</span>'}</div>${item.note?`<div class="gen-item-note">${item.note}</div>`:''}<button class="item-del" onclick="deletePal(${i})">✕</button>`;c.appendChild(row);});}
+
+// ══ Joint Play ══
+const jpData=[];let pendingJP={tags:new Set()};
+const JP_TAGS=[{k:'firm',l:'Firm'},{k:'hard',l:'Hard'},{k:'soft',l:'Soft'},{k:'empty',l:'Empty'},{k:'pain',l:'疼痛'}];
+function buildJPBody(body){pendingJP={tags:new Set()};body.innerHTML=`<div class="jp-add-row"><input class="jp-name-input" id="jp-name-input" placeholder="關節 / 節段名稱..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitJP();}"><div class="jp-tag-row">${JP_TAGS.map(t=>`<button class="jp-tag ${t.k}" id="pjp-${t.k}" onclick="toggleJPPending('${t.k}')">${t.l}</button>`).join('')}</div><input class="inline-note" id="jp-pending-note" placeholder="備註..." onkeydown="if(event.key==='Enter'){event.preventDefault();commitJP();}"><button class="inline-add-btn" onclick="commitJP()">新增</button></div><div id="jp-list"></div>`;renderJPList();}
+function toggleJPPending(k){if(pendingJP.tags.has(k))pendingJP.tags.delete(k);else pendingJP.tags.add(k);document.getElementById('pjp-'+k)?.classList.toggle('sel',pendingJP.tags.has(k));}
+function commitJP(){const ne=document.getElementById('jp-name-input');const no=document.getElementById('jp-pending-note');const name=ne?.value.trim();if(!name)return;jpData.push({name,tags:[...pendingJP.tags],note:no?.value.trim()||''});ne.value='';no.value='';pendingJP={tags:new Set()};JP_TAGS.forEach(t=>document.getElementById('pjp-'+t.k)?.classList.remove('sel'));renderJPList();ne.focus();}
+function deleteJP(i){jpData.splice(i,1);renderJPList();}
+function renderJPList(){const c=document.getElementById('jp-list');if(!c)return;c.innerHTML='';
+  const jpColors={firm:'background:#fef3e8;color:#6a4e2d;',hard:'background:#f0eefa;color:#4a4a8a;',soft:'background:#e8f5ee;color:#2d6a4f;',empty:'background:#f0f0f0;color:#888;',pain:'background:#fdf0ef;color:#c0392b;'};
+  jpData.forEach((item,i)=>{const row=document.createElement('div');row.className='gen-item';const tagsHtml=item.tags.map(t=>`<span class="gen-item-tag" style="${jpColors[t]}">${t.charAt(0).toUpperCase()+t.slice(1)}</span>`).join('');row.innerHTML=`<div class="gen-item-name">${item.name}</div><div class="gen-item-tags">${tagsHtml||'<span style="color:#bbb;font-size:11px;">—</span>'}</div>${item.note?`<div class="gen-item-note">${item.note}</div>`:''}<button class="item-del" onclick="deleteJP(${i})">✕</button>`;c.appendChild(row);});}
+
+// ══ Posture 3D ══
+const postureNote={text:''};
+function buildPostureBody(body){
+  body.innerHTML=`
+    <div class="posture-wrap">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">拖曳節點調整姿勢・雙指旋轉視角</div>
+      <div class="posture-canvas-box" id="posture-3d-box"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <button class="posture-reset-btn" onclick="reset3DPosture()">重置姿勢</button>
+        <button class="posture-reset-btn" onclick="resetCamera()">重置視角</button>
+        <button class="posture-reset-btn" id="view-toggle" onclick="toggleView()">切換前/後視角</button>
+        <button class="posture-reset-btn" id="posture-lock-btn" onclick="togglePostureLock()" style="background:#fef9ec;color:#d4820a;border:1px solid #f0d090;">🔓 固定姿勢</button>
+      </div>
+      <textarea class="posture-note" id="posture-note-input" placeholder="姿勢描述備註..." oninput="postureNote.text=this.value">${postureNote.text}</textarea>
+    </div>`;
+  init3DPosture();
+}
+
+// ══ 3D Posture ══
+let p3 = null; // scene state
+let postureLocked = false;
+
+const J3D_DEFAULT = {
+  head:  [0,1.7,0],
+  neck:  [0,1.45,0],
+  lsho:  [-0.22,1.35,0], rsho: [0.22,1.35,0],
+  lelb:  [-0.38,1.0,0],  relb: [0.38,1.0,0],
+  lwri:  [-0.45,0.65,0], rwri: [0.45,0.65,0],
+  lhan:  [-0.45,0.48,0], rhan: [0.45,0.48,0],
+  spine1:[0,1.2,0],
+  spine2:[0,0.95,0],
+  spine3:[0,0.7,0],
+  pelvis:[0,0.55,0],
+  lhip:  [-0.13,0.45,0], rhip: [0.13,0.45,0],
+  lkne:  [-0.14,0.05,0], rkne: [0.14,0.05,0],
+  lank:  [-0.14,-0.45,0],rank: [0.14,-0.45,0],
+  lfoo:  [-0.18,-0.6,0], rfoo: [0.18,-0.6,0],
+};
+
+const BONES3D = [
+  ['head','neck'],
+  ['neck','lsho'],['neck','rsho'],
+  ['neck','spine1'],
+  ['lsho','lelb'],['lelb','lwri'],['lwri','lhan'],
+  ['rsho','relb'],['relb','rwri'],['rwri','rhan'],
+  ['spine1','spine2'],['spine2','spine3'],['spine3','pelvis'],
+  ['pelvis','lhip'],['pelvis','rhip'],
+  ['lhip','lkne'],['lkne','lank'],['lank','lfoo'],
+  ['rhip','rkne'],['rkne','rank'],['rank','rfoo'],
+];
+
+function init3DPosture(){
+  const box = document.getElementById('posture-3d-box');
+  if(!box || !window.THREE) return;
+  box.style.height = '380px';
+  box.style.position = 'relative';
+
+  const W = box.clientWidth || 320;
+  const H = 380;
+
+  // Scene
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xfafaf8);
+
+  // Camera
+  const camera = new THREE.PerspectiveCamera(50, W/H, 0.1, 100);
+  camera.position.set(0, 0.6, 3.2);
+  camera.lookAt(0, 0.6, 0);
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(W, H);
+  box.appendChild(renderer.domElement);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.6);
+  dir.position.set(2,4,3);
+  scene.add(dir);
+
+  // Grid floor
+  const grid = new THREE.GridHelper(3, 12, 0xd0ccc6, 0xe0dbd2);
+  grid.position.y = -0.65;
+  scene.add(grid);
+
+  // Build joints and bones
+  const joints = {};
+  const jointMeshes = {};
+  const boneMeshes = {};
+
+  // Copy default positions
+  Object.keys(J3D_DEFAULT).forEach(k => {
+    joints[k] = new THREE.Vector3(...J3D_DEFAULT[k]);
+  });
+
+  const jMat = new THREE.MeshPhongMaterial({color:0x2d6a4f});
+  const jMatHead = new THREE.MeshPhongMaterial({color:0x4a7c5e});
+  const bMat = new THREE.MeshPhongMaterial({color:0x4a7c5e});
+  const jMatSel = new THREE.MeshPhongMaterial({color:0xe07030});
+
+  function makeSphere(r, mat){
+    const g = new THREE.SphereGeometry(r, 12, 8);
+    return new THREE.Mesh(g, mat);
+  }
+
+  function makeBone(a, b){
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
+    const g = new THREE.CylinderGeometry(0.025, 0.025, len, 8);
+    const m = new THREE.Mesh(g, bMat.clone());
+    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+    m.position.copy(mid);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+    return m;
+  }
+
+  // Create joint meshes
+  Object.keys(joints).forEach(k => {
+    const r = k === 'head' ? 0.11 : 0.045;
+    const mat = k === 'head' ? jMatHead : jMat.clone();
+    const m = makeSphere(r, mat);
+    m.position.copy(joints[k]);
+    m.userData.key = k;
+    scene.add(m);
+    jointMeshes[k] = m;
+  });
+
+  // Create bone meshes
+  BONES3D.forEach(([a,b]) => {
+    const bm = makeBone(joints[a], joints[b]);
+    scene.add(bm);
+    boneMeshes[a+'_'+b] = bm;
+  });
+
+  function updateBones(){
+    BONES3D.forEach(([a,b]) => {
+      const bm = boneMeshes[a+'_'+b];
+      if(!bm) return;
+      const pa = joints[a], pb = joints[b];
+      const dir = new THREE.Vector3().subVectors(pb, pa);
+      const len = dir.length();
+      bm.scale.y = len / bm.geometry.parameters.height;
+      const mid = new THREE.Vector3().addVectors(pa, pb).multiplyScalar(0.5);
+      bm.position.copy(mid);
+      bm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+    });
+  }
+
+  // Orbit (touch & mouse)
+  let camTheta = 0, camPhi = Math.PI/2, camR = 3.2;
+  let lastTouch = null, lastMouse = null;
+  let pinchDist0 = 0;
+  const camTarget = new THREE.Vector3(0, 0.6, 0);
+
+  function updateCamera(){
+    camera.position.set(
+      camTarget.x + camR * Math.sin(camPhi) * Math.sin(camTheta),
+      camTarget.y + camR * Math.cos(camPhi),
+      camTarget.z + camR * Math.sin(camPhi) * Math.cos(camTheta)
+    );
+    camera.lookAt(camTarget);
+  }
+
+  // Raycasting for joint selection
+  const raycaster = new THREE.Raycaster();
+  raycaster.params.Points.threshold = 0.1;
+  let selectedKey = null;
+  let isDraggingJoint = false;
+  let isRotating = false;
+
+  function getIntersectedJoint(clientX, clientY){
+    const rect = renderer.domElement.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera({x,y}, camera);
+    const meshes = Object.values(jointMeshes);
+    const hits = raycaster.intersectObjects(meshes);
+    if(hits.length > 0) return hits[0].object.userData.key;
+    return null;
+  }
+
+  function moveJointOnScreen(key, dx, dy){
+    if(postureLocked) return;
+    // Move joint in camera-relative plane
+    const right = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    right.crossVectors(camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
+    up.copy(camera.up).normalize();
+    const speed = 0.004;
+    joints[key].addScaledVector(right, dx * speed);
+    joints[key].addScaledVector(up, -dy * speed);
+    jointMeshes[key].position.copy(joints[key]);
+    updateBones();
+  }
+
+  // Mouse events
+  renderer.domElement.addEventListener('mousedown', e => {
+    const k = getIntersectedJoint(e.clientX, e.clientY);
+    if(k){
+      selectedKey = k;
+      isDraggingJoint = true;
+      jointMeshes[k].material.color.set(0xe07030);
+    } else {
+      isRotating = true;
+      lastMouse = {x:e.clientX, y:e.clientY};
+    }
+  });
+  renderer.domElement.addEventListener('mousemove', e => {
+    if(isDraggingJoint && selectedKey){
+      const prev = lastMouse || {x:e.clientX, y:e.clientY};
+      moveJointOnScreen(selectedKey, e.clientX - prev.x, e.clientY - prev.y);
+    } else if(isRotating && lastMouse){
+      camTheta -= (e.clientX - lastMouse.x) * 0.01;
+      camPhi   -= (e.clientY - lastMouse.y) * 0.01;
+      camPhi = Math.max(0.1, Math.min(Math.PI-0.1, camPhi));
+      updateCamera();
+    }
+    lastMouse = {x:e.clientX, y:e.clientY};
+  });
+  renderer.domElement.addEventListener('mouseup', () => {
+    if(selectedKey) jointMeshes[selectedKey].material.color.set(0x2d6a4f);
+    isDraggingJoint = false; isRotating = false; selectedKey = null; lastMouse = null;
+  });
+
+  // Touch events
+  renderer.domElement.addEventListener('touchstart', e => {
+    e.preventDefault();
+    if(e.touches.length === 1){
+      const t = e.touches[0];
+      const k = getIntersectedJoint(t.clientX, t.clientY);
+      if(k){
+        selectedKey = k;
+        isDraggingJoint = true;
+        jointMeshes[k].material.color.set(0xe07030);
+        lastTouch = {x:t.clientX, y:t.clientY};
+      } else {
+        isRotating = true;
+        lastTouch = {x:t.clientX, y:t.clientY};
+      }
+    } else if(e.touches.length === 2){
+      isDraggingJoint = false; isRotating = false;
+      pinchDist0 = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    }
+  },{passive:false});
+
+  renderer.domElement.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if(e.touches.length === 1){
+      const t = e.touches[0];
+      if(isDraggingJoint && selectedKey && lastTouch){
+        moveJointOnScreen(selectedKey, t.clientX-lastTouch.x, t.clientY-lastTouch.y);
+      } else if(isRotating && lastTouch){
+        camTheta -= (t.clientX - lastTouch.x) * 0.012;
+        camPhi   -= (t.clientY - lastTouch.y) * 0.012;
+        camPhi = Math.max(0.1, Math.min(Math.PI-0.1, camPhi));
+        updateCamera();
+      }
+      lastTouch = {x:t.clientX, y:t.clientY};
+    } else if(e.touches.length === 2){
+      const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      camR *= pinchDist0 / d;
+      camR = Math.max(1.5, Math.min(6, camR));
+      pinchDist0 = d;
+      updateCamera();
+    }
+  },{passive:false});
+
+  renderer.domElement.addEventListener('touchend', e => {
+    if(selectedKey) jointMeshes[selectedKey].material.color.set(0x2d6a4f);
+    isDraggingJoint = false; isRotating = false; selectedKey = null; lastTouch = null;
+  });
+
+  // Animate
+  function animate(){
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+  updateCamera();
+
+  // Store refs for reset/toggle
+  p3 = { joints, jointMeshes, updateBones, camera, camTarget,
+    setCamTheta: v => { camTheta = v; updateCamera(); },
+    setCamPhi:   v => { camPhi = v; updateCamera(); },
+    setCamR:     v => { camR = v; updateCamera(); },
+    getCamTheta: () => camTheta,
+  };
+}
+
+function reset3DPosture(){
+  if(!p3) return;
+  Object.keys(J3D_DEFAULT).forEach(k => {
+    p3.joints[k].set(...J3D_DEFAULT[k]);
+    p3.jointMeshes[k].position.copy(p3.joints[k]);
+  });
+  p3.updateBones();
+}
+
+function resetCamera(){
+  if(!p3) return;
+  p3.setCamTheta(0);
+  p3.setCamPhi(Math.PI/2);
+  p3.setCamR(3.2);
+}
+
+function toggleView(){
+  if(!p3) return;
+  const btn = document.getElementById('view-toggle');
+  const t = p3.getCamTheta();
+  if(Math.abs(t % (Math.PI*2)) < 0.3 || Math.abs(t % (Math.PI*2) - Math.PI*2) < 0.3){
+    p3.setCamTheta(Math.PI);
+    if(btn) btn.textContent = '切換前視角';
+  } else {
+    p3.setCamTheta(0);
+    if(btn) btn.textContent = '切換後視角';
+  }
+}
+
+function togglePostureLock(){
+  postureLocked = !postureLocked;
+  const btn = document.getElementById('posture-lock-btn');
+  if(!btn) return;
+  if(postureLocked){
+    btn.textContent = '🔒 已固定（點擊解鎖）';
+    btn.style.background = '#e8f5ee';
+    btn.style.color = '#2d6a4f';
+    btn.style.borderColor = '#a8d8b8';
+  } else {
+    btn.textContent = '🔓 固定姿勢';
+    btn.style.background = '#fef9ec';
+    btn.style.color = '#d4820a';
+    btn.style.borderColor = '#f0d090';
+  }
+}
+
+
+// ══ Motion Assessment ══
+const motionData=[];
+function buildMotionBody(body){body.innerHTML=`<div id="motion-list"></div><div class="list-add-row" style="border-top:1px solid var(--border);"><span style="font-size:13px;color:var(--text-muted);">＋</span><input class="list-add-input" id="motion-input" placeholder="新增動作評估項目..." onkeydown="if(event.key==='Enter'){event.preventDefault();addMotion();}"><button class="list-add-btn" onclick="addMotion()">新增</button></div>`;renderMotionList();}
+function addMotion(){const i=document.getElementById('motion-input');const v=i.value.trim();if(!v)return;motionData.push(v);i.value='';renderMotionList();i.focus();}
+function deleteMotion(i){motionData.splice(i,1);renderMotionList();}
+function updateMotion(i,v){motionData[i]=v;}
+function renderMotionList(){const c=document.getElementById('motion-list');if(!c)return;c.innerHTML='';motionData.forEach((tx,i)=>{const r=document.createElement('div');r.className='motion-assess-item';r.innerHTML=`<div class="motion-assess-num">${i+1}.</div><textarea class="motion-assess-input" rows="1" oninput="updateMotion(${i},this.value);autoResize(this)">${tx}</textarea><button class="item-del" onclick="deleteMotion(${i})">✕</button>`;c.appendChild(r);setTimeout(()=>autoResize(r.querySelector('textarea')),0);});}
+
+// ══ Breathing ══
+const breathData={hiLo:'',costal:'',pattern:''};
+function buildBreathBody(body){
+  body.innerHTML=`<div class="breath-section">
+    <div class="breath-item"><div class="breath-label">Hi-Lo Test</div><textarea class="breath-input" id="breath-hilo" placeholder="填寫 Hi-Lo Test 結果..." oninput="breathData.hiLo=this.value">${breathData.hiLo}</textarea></div>
+    <div class="breath-item"><div class="breath-label">Costal Angle</div><textarea class="breath-input" id="breath-costal" placeholder="填寫 Costal Angle 結果..." oninput="breathData.costal=this.value">${breathData.costal}</textarea></div>
+    <div class="breath-item"><div class="breath-label">Pattern</div><textarea class="breath-input" id="breath-pattern" placeholder="填寫呼吸模式..." oninput="breathData.pattern=this.value">${breathData.pattern}</textarea></div>
+  </div>`;}
+
+// ══ Other ══
+const otherData={text:''};
+function buildOtherBody(body){
+  body.innerHTML=`<textarea class="big-textarea" id="other-input" placeholder="自由填寫其他評估內容..." style="min-height:100px;" oninput="otherData.text=this.value">${otherData.text}</textarea>`;
+}
+
+// ══ 產生報告 ══
+function generateReport(){
+  const name=document.getElementById('pt-name').value.trim();
+  const age=document.getElementById('pt-age').value.trim();
+  const job=document.getElementById('pt-job').value.trim();
+  const complaint=document.getElementById('chief-complaint').value.trim();
+  const history=document.getElementById('med-history').value.trim();
+  const lines=[];
+  
+  lines.push('  物理治療評估報告');
+  lines.push('');
+  const infoLine=[name?`姓名：${name}`:null,selectedGender?`性別：${selectedGender}`:null,age?`年齡：${age} 歲`:null,job?`職業：${job}`:null].filter(Boolean).join('　');
+  if(infoLine)lines.push(infoLine+'\n');
+  const notes=document.getElementById('pt-notes').value.trim();
+  if(notes){lines.push('▌ 注意事項');lines.push(notes);lines.push('');}
+  if(complaint){lines.push('▌ 主訴');lines.push(complaint+'\n');}
+  if(history){lines.push('▌ 過去病史');lines.push(history+'\n');}
+
+  const examLines=[];
+  addedAssess.forEach(type=>{
+    if(type==='rom'){
+      const rls=[];
+      addedRegions.forEach(id=>{
+        const region=ALL_REGIONS.find(r=>r.id===id);const rl=[];
+        ['active','passive'].forEach(mode=>{
+          const mL=mode==='active'?'AROM 主動':'PROM 被動';const fs=[];
+          region.motions.forEach((motion,i)=>{
+            const ms=getMS(id,mode,i);const tags=[];
+            if(ms.norm)tags.push('正常');if(ms.limit)tags.push('受限');if(ms.pain)tags.push('疼痛');if(ms.comp)tags.push('代償');
+            if(tags.length>0||ms.note.trim()){let line=`    ${motion}: ${tags.length?tags.join('、'):'—'}`;if(ms.note.trim())line+=`（${ms.note.trim()}）`;fs.push(line);}
+          });
+          if(fs.length){rl.push(`  【${mL}】`);fs.forEach(f=>rl.push(f));}
+        });
+        if(rl.length){rls.push(`  ◆ ${region.name}`);rl.forEach(l=>rls.push(l));rls.push('');}
+      });
+      if(rls.length){examLines.push('  ─ 關節活動度');rls.forEach(l=>examLines.push(l));}
+    }
+    if(type==='mmt'&&mmtData.length>0){examLines.push('  ─ 肌力測試 MMT');mmtData.forEach(item=>{let l=`  ${item.name}: ${item.grade!==null?item.grade+'/5':'—'}`;if(item.note)l+=`（${item.note}）`;examLines.push(l);});examLines.push('');}
+    if(type==='st'&&stData.length>0){examLines.push('  ─ Special Test');stData.forEach(item=>{let l=`  ${item.name}: ${item.result??'—'}`;if(item.note)l+=`（${item.note}）`;examLines.push(l);});examLines.push('');}
+    if(type==='palpation'&&palData.length>0){
+      const tagLabels={'norm':'正常','tight':'緊繃','tend':'壓痛','sens':'敏感'};
+      examLines.push('  ─ 觸診');palData.forEach(item=>{let l=`  ${item.name}: ${item.tags.length?item.tags.map(t=>tagLabels[t]).join('、'):'—'}`;if(item.note)l+=`（${item.note}）`;examLines.push(l);});examLines.push('');
+    }
+    if(type==='jp'&&jpData.length>0){examLines.push('  ─ Joint Play');jpData.forEach(item=>{let l=`  ${item.name}: ${item.tags.length?item.tags.map(t=>t.charAt(0).toUpperCase()+t.slice(1)).join('、'):'—'}`;if(item.note)l+=`（${item.note}）`;examLines.push(l);});examLines.push('');}
+    if(type==='posture'){examLines.push('  ─ 靜態姿勢評估');if(postureNote.text.trim())examLines.push('  '+postureNote.text.trim());examLines.push('');}
+    if(type==='motion'&&motionData.length>0){examLines.push('  ─ 動作評估');motionData.forEach((m,i)=>examLines.push(`  ${i+1}. ${m}`));examLines.push('');}
+    if(type==='other'){
+      const ot=document.getElementById('other-input')?.value.trim()||otherData.text;
+      if(ot){examLines.push('  ─ 其他');examLines.push('  '+ot.replace(/\n/g,'\n  '));examLines.push('');}
+    }
+    if(type==='breath'){
+      const bh=document.getElementById('breath-hilo')?.value.trim()||breathData.hiLo;
+      const bc=document.getElementById('breath-costal')?.value.trim()||breathData.costal;
+      const bp=document.getElementById('breath-pattern')?.value.trim()||breathData.pattern;
+      if(bh||bc||bp){
+        examLines.push('  ─ 呼吸評估');
+        if(bh)examLines.push(`  Hi-Lo Test: ${bh}`);
+        if(bc)examLines.push(`  Costal Angle: ${bc}`);
+        if(bp)examLines.push(`  Pattern: ${bp}`);
+        examLines.push('');
+      }
+    }
+  });
+  if(examLines.length){lines.push('▌ 理學評估');examLines.forEach(l=>lines.push(l));}
+
+  const txItems=simpleData.treatment.filter(t=>t.trim());
+  if(txItems.length){lines.push('▌ 治療');txItems.forEach((t,i)=>lines.push(`  ${i+1}. ${t}`));lines.push('');}
+  const exItems=simpleData.exercise.filter(e=>e.trim());
+  if(exItems.length){lines.push('▌ 回家運動');exItems.forEach((e,i)=>lines.push(`  ${i+1}. ${e}`));lines.push('');}
+
+  if(!infoLine&&!complaint&&!history&&!examLines.length&&!txItems.length&&!exItems.length)lines.push('（尚未填寫任何內容）');
+  const html = '<div style="border:none;outline:none;">' + lines.map(l => {
+    if(!l) return '<div style="height:0.8em;border:none;"></div>';
+    return '<div style="margin:0;padding:0;border:none;word-break:break-word;overflow-wrap:break-word;">' + l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+  }).join('') + '</div>';
+  document.getElementById('reportContent').innerHTML = html;
+  resetNotionBtn();
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(e){if(e.target===document.getElementById('modal')){document.getElementById('modal').classList.remove('show');resetNotionBtn();}}
+function resetNotionBtn(){const btn=document.getElementById('notion-save-btn');if(btn){btn.textContent='存入 Notion';btn.disabled=false;}showNotionStatus('');}
+function copyReport(){const txt=document.getElementById('reportContent').innerText;navigator.clipboard.writeText(txt).then(()=>{const btn=document.querySelector('.modal-actions .btn-primary');btn.textContent='已複製 ✓';setTimeout(()=>btn.textContent='複製報告',1800);});}
+
+// ══ 紀錄儲存（記憶體 + 匯出/匯入）══
+let savedRecords = [];
+
+function saveRecord(){
+  const c = document.getElementById('reportContent').textContent;
+  if(!c || c.includes('尚未填寫')){ alert('請先填寫評估內容再儲存！'); return; }
+  const name = document.getElementById('pt-name').value.trim() || '未命名病人';
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('zh-TW') + ' ' + now.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+  savedRecords.unshift({ id: Date.now(), name, date: dateStr, content: c });
+  const btn = document.querySelector('.modal-actions .btn-secondary[onclick*="saveRecord"]') || event?.target;
+  if(btn){ btn.textContent='✅ 已儲存'; setTimeout(()=>btn.textContent='💾 儲存紀錄',2000); }
+}
+
+function openRecords(){
+  renderRecordsList();
+  document.getElementById('records-overlay').classList.add('show');
+}
+
+function renderRecordsList(){
+  const c = document.getElementById('records-list');
+  if(!c) return;
+  if(savedRecords.length === 0){
+    c.innerHTML = '<div class="records-empty">尚無儲存的評估紀錄<br><small style="color:#bbb;margin-top:8px;display:block;">儲存的紀錄在關閉 app 前都有效<br>可用「匯出」儲存成檔案</small></div>';
+    return;
+  }
+  c.innerHTML = '';
+  savedRecords.forEach((r,i)=>{
+    const item = document.createElement('div');
+    item.className = 'record-item';
+    item.innerHTML = `
+      <div class="record-item-name">${r.name}</div>
+      <div class="record-item-date">${r.date}</div>
+      <div class="record-item-actions">
+        <button class="record-btn view" onclick="viewRecord(${i})">查看</button>
+        <button class="record-btn del" onclick="deleteRecord(${i})">刪除</button>
+      </div>`;
+    c.appendChild(item);
+  });
+}
+
+function viewRecord(i){
+  const r = savedRecords[i];
+  document.getElementById('record-view-title').textContent = r.name;
+  document.getElementById('record-view-date').textContent = r.date;
+  document.getElementById('record-view-content').textContent = r.content;
+  document.getElementById('record-view-overlay').classList.add('show');
+}
+
+function deleteRecord(i){
+  if(!confirm('確定要刪除這筆紀錄嗎？')) return;
+  savedRecords.splice(i,1);
+  renderRecordsList();
+}
+
+function copyRecordContent(){
+  const text = document.getElementById('record-view-content').textContent;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.querySelector('.record-view-actions .btn-primary');
+    btn.textContent='已複製 ✓';
+    setTimeout(()=>btn.textContent='複製',1800);
+  });
+}
+
+function printRecord(){
+  const c = document.getElementById('record-view-content').textContent;
+  const title = document.getElementById('record-view-title').textContent;
+  const date = document.getElementById('record-view-date').textContent;
+  const w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+title+'</title><style>body{font-family:monospace;font-size:13px;line-height:1.8;padding:24px;white-space:pre-wrap;}h2{font-size:16px;margin-bottom:4px;}p{color:#666;font-size:11px;margin-bottom:20px;}</style></head><body><h2>'+title+'</h2><p>'+date+'</p>'+c+'</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(()=>w.print(),500);
+}
+
+function exportRecords(){
+  if(savedRecords.length === 0){ alert('目前沒有紀錄可以匯出'); return; }
+  const data = JSON.stringify(savedRecords, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pt_records_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importRecords(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if(!Array.isArray(data)) throw new Error();
+        const count = data.length;
+        savedRecords = [...data, ...savedRecords];
+        renderRecordsList();
+        alert('成功匯入 ' + count + ' 筆紀錄！');
+      } catch(e) { alert('檔案格式錯誤，請選擇正確的紀錄檔案'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function closeRecordsIfBg(e){ if(e.target===document.getElementById('records-overlay')) document.getElementById('records-overlay').classList.remove('show'); }
+function closeRecordViewIfBg(e){ if(e.target===document.getElementById('record-view-overlay')) document.getElementById('record-view-overlay').classList.remove('show'); }
+
+function resetAll(){
+  if(!confirm('確定要清除所有填寫內容嗎？'))return;
+  ['pt-name','pt-age','pt-job','pt-notes','chief-complaint','med-history'].forEach(id=>document.getElementById(id).value='');
+  selectedGender='';document.getElementById('gender-m').classList.remove('selected');document.getElementById('gender-f').classList.remove('selected');
+  simpleData.treatment=[];simpleData.exercise=[];renderSimple('treatment');renderSimple('exercise');
+  mmtData.length=0;stData.length=0;palData.length=0;jpData.length=0;motionData.length=0;
+  Object.assign(breathData,{hiLo:'',costal:'',pattern:''});postureNote.text='';
+  addedRegions=[];addedAssess=[];renderAssessList();
+  document.getElementById('assess-selector').value='';
+}
+renderAssessList();
+
+// ══ Notion ══
+const NOTION_DB_DEFAULT='357091fccaf480b4a4b4d32484d033ea';
+// ★ 在這裡填入你的 Token（每次重新產生後更新這裡）
+let NOTION_TOKEN_HARDCODED='';  // 例如: 'ntn_xxxxxx'
+
+function loadNotionSettings(){
+  const ti=document.getElementById('notion-token-input');
+  const di=document.getElementById('notion-db-input');
+  if(ti) ti.value=NOTION_TOKEN_HARDCODED||localStorage.getItem('notion_token')||'';
+  if(di) di.value=localStorage.getItem('notion_db')||NOTION_DB_DEFAULT;
+}
+
+function saveNotionSettings(){
+  const token=document.getElementById('notion-token-input').value.trim();
+  const db=document.getElementById('notion-db-input').value.trim();
+  if(!token||!db){showNotionMsg('請填寫 Token 和資料庫 ID','#c0392b');return;}
+  NOTION_TOKEN_HARDCODED=token;
+  try{localStorage.setItem('notion_token',token);localStorage.setItem('notion_db',db);}catch(e){}
+  showNotionMsg('✅ 設定已儲存！','#2d6a4f');
+  setTimeout(function(){document.getElementById('notion-modal').classList.remove('show');},1200);
+}
+
+function showNotionMsg(msg,color){
+  const el=document.getElementById('notion-test-msg');
+  if(el){el.textContent=msg;el.style.color=color||'#2d6a4f';}
+}
+function showNotionStatus(msg,color){
+  const el=document.getElementById('notion-status');
+  if(!el) return;
+  if(msg){el.textContent=msg;el.style.color=color||'#2d6a4f';el.style.display='block';}
+  else{el.textContent='';el.style.display='none';}
+}
+
+async function testNotionConnection(){
+  const token=document.getElementById('notion-token-input').value.trim()||NOTION_TOKEN_HARDCODED;
+  const db=document.getElementById('notion-db-input').value.trim()||NOTION_DB_DEFAULT;
+  if(!token||!db){showNotionMsg('請先填寫 Token 和資料庫 ID','#c0392b');return;}
+  showNotionMsg('測試中...','#888');
+  try{
+    const res=await fetch('https://notion.asfeatherss.workers.dev/v1/databases/'+db,{
+      method:'GET',
+      headers:{'Authorization':'Bearer '+token,'Notion-Version':'2022-06-28'}
+    });
+    if(res.ok){showNotionMsg('✅ 連線成功！資料庫已找到','#2d6a4f');}
+    else{const e=await res.json();showNotionMsg('❌ 連線失敗：'+(e.message||res.status),'#c0392b');}
+  }catch(e){showNotionMsg('❌ 網路錯誤，請確認 Token 是否正確','#c0392b');}
+}
+
+async function saveToNotion(){
+  const btn=document.getElementById('notion-save-btn');
+  const statusEl=document.getElementById('notion-status');
+  function setStatus(msg,color){showNotionStatus(msg,color);}
+
+  const token=NOTION_TOKEN_HARDCODED||localStorage.getItem('notion_token');
+  const db=localStorage.getItem('notion_db')||NOTION_DB_DEFAULT;
+
+  if(!token){
+    document.getElementById('notion-modal').classList.add('show');
+    loadNotionSettings();
+    showNotionMsg('請先設定並儲存 Token','#d4820a');
+    return;
+  }
+
+  btn.textContent='存入中...';
+  setStatus('連線中...','#888');
+
+  const report=document.getElementById('reportContent').textContent;
+  const name=document.getElementById('pt-name').value.trim()||'未命名病人';
+  const date=new Date().toISOString().slice(0,10);
+  const chunks=[];
+  for(let i=0;i<report.length;i+=1900) chunks.push(report.slice(i,i+1900));
+  const children=chunks.map(function(c){
+    return {object:'block',type:'paragraph',paragraph:{rich_text:[{type:'text',text:{content:c}}]}};
+  });
+
+  try{
+    const res=await fetch('https://notion.asfeatherss.workers.dev/v1/pages',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'Notion-Version':'2022-06-28','Content-Type':'application/json'},
+      body:JSON.stringify({
+        parent:{database_id:db},
+        properties:{Name:{title:[{text:{content:name+' - '+date}}]}},
+        children:children
+      })
+    });
+    const data=await res.json();
+    if(res.ok){
+      btn.textContent='✅ 已存入';
+      setStatus('✅ 成功存入 Notion！','#2d6a4f');
+      setTimeout(function(){btn.textContent='存入 Notion';setStatus('','');},3000);
+    }else{
+      btn.textContent='存入 Notion';
+      setStatus('❌ 失敗：'+(data.message||data.code||res.status),'#c0392b');
+    }
+  }catch(e){
+    btn.textContent='存入 Notion';
+    setStatus('❌ 網路錯誤：'+e.message,'#c0392b');
+  }
+}
+
+function closeNotionModal(e){
+  if(e.target===document.getElementById('notion-modal'))
+    document.getElementById('notion-modal').classList.remove('show');
+}
+
+// Settings link in header - added directly to HTML
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW failed:', e));
+  });
+}
+</script>
+</body>
+</html>
